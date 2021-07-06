@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <title>Snake</title>
+</head>
+<body>
+
+    <h1> "BIENVENIDOS AL JUEGO DE LA VIBORITA </h1>
+    
+<canvas width="500" height="500"> </canvas> 
+
+
+<script>
+
+    // VARIABLES DE CONTROL PARA PODER EMPEZAR A CONTROLAR EL JUEGO
+const ANCHO = 500; // ancho y alto de mi canvas
+const INTERVALO = 80; // INTERVALO DE MILISEGUNDOS SE VA A EJECUTAR LA FUNCION LOOPER
+const PESO = 10; // TAMAÑO DE MI CUADRADO 
+
+// CONIF DE CONTROLES 
+const DIRECCION = {
+
+    // Validar las letras del teclado
+    A: [-1, 0],
+    D: [1, 0],
+    S: [0, 1], 
+    W: [0, -1],
+
+    a: [-1, 0],
+    d: [1, 0],
+    s: [0, 1], 
+    w: [0, -1],
+
+    ArrowUp: [0, -1], 
+    ArrowDown: [0, 1],  // Los movimientos ej para abajo tengo que mover a y
+    ArrowRight: [1, 0],
+    ArrowLeft:  [-1, 0],
+
+} // CREO UN OBJETO DONDE VOY A GUARDAR LAS DIRECCIONES TANTO EN X COMO EN Y. Los Objetos nombre : []
+
+let controles = {
+    
+    direccion :{ x: 1 , y : 0},
+    bicho:[{x :0, y: 0} ],
+    victima: [{x : 0 , y : 250}], 
+    jugando :false,
+    crecimiento: 0
+
+
+} // creo un objeto en donde le voy a decir la direccion de donde se va a mover la sarpiente, cuando arranca el juego po defalut. Creo un arreglo Bicho
+let paradonde // VARIABLE CON LAS DIRECCIONES
+let papel = document.querySelector ("canvas")  //refernciar siempre el JS. Trabajo en el contexto del CANVAS. 
+
+let ctx = papel.getContext ("2d") // referencio el js de papel, lo guardo en la variable ctx (contexto), en el cual voy a trabajar en dos 2d
+//--------------------------------------------------------------------------------------------------------
+
+let looper = ()  => {
+    // armo un objeto vacio llamado cola 
+    let cola = {}
+    
+    Object.assign(cola, controles.bicho[controles.bicho.length-1]) //espera 2 parametro a donde yo quiero copiar y que parte del bicho voy a copiar (ultima pate). Clono la serpiente lo que se ira haciendo mas grande 
+    const cabezaser = controles.bicho [0] 
+    let atrapado = cabezaser.x == controles.victima.x && cabezaser.y === controles.victima.y  // si se cumple esta condicion se guarda un true   verifico que se lo comio  
+     
+    if (detectarChoque()){ // si hay choque en la vuelta me detiene el juego
+        controles.jugando = false
+    
+        reiniciarJuego()
+        console.log("FIN DE JUEGO")
+        
+    }
+
+    let posicionx = controles.direccion.x; // REF LA DIRECCION ACTUAL X
+    let posiciony = controles.direccion.y;
+    // guardo en variables la posicion de la cabeza, la posicion de x y de y
+
+    let tamaño  = controles.bicho.length-1 //voy a guardar cuantas partes tienen mi cabeza de la serpiente 
+
+    if (controles.jugando){
+
+         for (let idx = tamaño; idx > -1; idx--){
+
+        const cabezaser = controles.bicho [idx]     // REFERENCIO LA CABEZA DE LA SERPIENTE cabeza =sq. For al revez 
+
+        // If que  voy a instanciar la cabeza en posicion 0 y sino voy a darle el valor anterior a la cabeza.
+
+        if (idx === 0){ //pregunto si la cabeza avanza 
+        cabezaser.x += posicionx; // Acumulo cada vez que da una vuelta tanto para x o para y. lA DIRECCION  
+        cabezaser.y += posiciony;
+        } else {
+        cabezaser.x = controles.bicho[idx-1].x;
+        cabezaser.y = controles.bicho[idx-1].y;
+
+        }
+
+        }
+        
+    }
+
+    if(atrapado){ // si atrapo algo sumo 10 a la serpiente y llamo a una nueva victima 
+    controles.crecimiento += 10
+    reVictima () // llamo a función 
+    }
+    
+    if (controles.crecimiento>0){ // agrego al bicho el clon de cola y le resto 1 a crecimiento 
+        controles.bicho.push (cola)
+        controles.crecimiento -= 1
+    }
+    requestAnimationFrame(dibujar) // nueva animación.
+
+  setTimeout (looper,INTERVALO) // ESTA FUNCIÓN EN X CANT DE T VUELVA A LLAMAR A LA FUNCION 
+
+} //FUNCIÓN LOOPER(bucle, mover la serpiente, mover el canvas, borrarse e canvas y volverse a dibujar)
+// LLamar al teclado mediante JS
+//--------------------------------------------------------------------------------------------------------
+
+let dibujar = ()  => { // esta funcion me va  a sacar el bicho y la victima donde van a estar 
+
+ctx.clearRect(0,0,ANCHO,ANCHO) // Cada vez que voy a dibujar  le voy a decir que borre el ctx con ducha función lo borro. Borro el canvas (borra la posicion en la que estba)
+//const sq = controles.bicho [0] // sirve para saber en donde dibujar la cabeza nuevamente y asi poder que srga la animación. iNSTANCIO LA CABEZA NUEVAMENT    
+
+for (let idx =0 ; idx < controles.bicho.length; idx++){
+    
+    const{x,y } = controles.bicho[idx]
+    dibujarActores("green", x , y)
+
+}
+const victima = controles.victima
+
+dibujarActores("white", victima.x , victima.y)
+}
+//--------------------------------------------------------------------------------------------------------
+// Voy a dibujar la comida y  la serpiente para mostrar 
+
+let dibujarActores = (color, x, y ) => {
+
+ctx.fillStyle = color //fylstyle es el color de lo que voy a creear ( rectangulo). Lo va hacer de manera automatica xq esta dentro de la función
+
+ctx.fillRect(x * PESO, y *PESO, PESO, PESO) // x y (eje de cordenadas) w = weight (ancho) h= heigth (alto). FUnciona como una función de eje x y y
+
+}
+
+//--------------------------------------------------------------------------------------------------------
+
+let cualquierLado = () => {
+    let direccion = Object.values (DIRECCION) //guardo dentro de un arribe el obj direccion
+    return {
+        x : parseInt(Math.random()*ANCHO/PESO), // para que me tire una posición x en x
+        y: parseInt (Math.random()*ANCHO/PESO),
+        d: direccion [parseInt(Math.random()*11)]
+    }
+}
+
+//--------------------------------------------------------------------------------------------------------
+// Funcion para volver a colocar a una nueva presa
+
+let reVictima  = () => {
+    let nuevaPosicion = cualquierLado ()
+
+    let victima = controles.victima 
+
+    victima.x  = nuevaPosicion.x;
+    victima.y =  nuevaPosicion.y;
+}
+//--------------------------------------------------------------------------------------------------------
+// funciuon para reiniciar el juego y valores 
+
+let reiniciarJuego = () => {
+
+    controles = {
+    
+    direccion :{ x: 1 , y : 0},
+    bicho:[{x :0, y: 0} ],
+    victima: [{x : 0 , y : 250}], 
+    jugando :false,
+    crecimiento: 0
+
+
+}// reinicio a la serpiente que vuelva a esos controles 
+
+    posicion = cualquierLado () // para la sarpiente
+    let head = controles.bicho[0]
+
+    head.x  =posicion.x;
+    head.y = posicion.y;
+    controles.direccion.x = posicion.d[0];
+    controles.direccion.y = posicion.d[1];
+
+    posicionVictima =  cualquierLado () // Presa posicion random 
+    let victima = controles.victima 
+
+    victima.x  =posicionVictima.x;
+    victima.y = posicionVictima.y;
+    
+    controles.jugando = true // para que funcione cuando esta jugando 
+}
+
+
+//--------------------------------------------------------------------------------------------------------
+// voy a llamar a la funcion cuando la pantalla se haya cargado por completo el documento llama al looper
+
+window.onload  = () => {
+
+ reiniciarJuego()
+
+    looper()
+}
+//--------------------------------------------------------------------------------------------------------
+
+let detectarChoque = () => {
+
+    const head = controles.bicho [0]
+    if (head.x < 0 || head.x >= ANCHO/PESO || head.y >= ANCHO /PESO || head.y < 0 ) { // si es menor a 0 se fue del canvas, perdio{}
+        return true
+    }
+
+    for ( let idx = 1;  idx < controles.bicho.length; idx ++) {
+        const sq = controles.bicho[idx]// guardo el elemento de la vuelta 
+
+        if (sq.x === head.x && sq.y === head.y) { // funcion que significa para saber si choco a si mismo 
+            return true
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------------------------
+document.onkeydown = (e) =>{
+
+   paradonde = DIRECCION[e.key]   // guardo la posicion que voy apretar
+const [x, y] = paradonde; // es donde se va ir guardando y para donde va ir cada vez que apreto una tecla lo voy a ir guardando en lsa variables de abajo
+
+if (-x !== controles.direccion.x && -y !== controles.direccion.y) // Para que la viborita no vaya al opuesto creo esta condición, 
+{
+    //ASIGNO LAS DIRECCIONES A MIS CONTROLES. 
+    controles.direccion.x = x;
+    controles.direccion.y = y;
+}
+
+
+
+}  // es todo el doc de JS, (e) capturo el momento. Cuando estoy en la pagina lo que hace es que al apretar cualquier boton desde la consola me guarda que baje 
+
+// valido que tecla estoy apretando para saber a que dirección voy a ir
+
+</script>
+</body>
+</html>
